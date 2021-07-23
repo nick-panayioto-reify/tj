@@ -1,0 +1,11 @@
+{:deps {com.cognitect/transit-clj {:mvn/version "1.0.324"}
+        cheshire/cheshire {:mvn/version "5.10.0"}
+        org.clojure/tools.cli {:mvn/version "1.0.206"}}
+ :aliases
+ {:uberjar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.1.267"}}
+            :exec-fn hf.depstar/uberjar
+            :exec-args {:aot true}}}
+  ;; build a jar (library):
+  :jar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.1.267"}}
+        :exec-fn hf.depstar/jar
+        :exec-args {}}}

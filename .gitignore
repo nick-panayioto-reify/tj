@@ -1,0 +1,37 @@
+/target
+/classes
+/checkouts
+pom.xml
+pom.xml.asc
+*.jar
+*.class
+/.lein-*
+/.nrepl-port
+.hgignore
+.hg/
+.idea
+*.iml
+.calva/
+.lsp/
+.vscode/
+.DS_Store
+log/lein-test.log
+logs/newrelic_agent.log
+kibit.log
+log/**
+test-results/
+.cpcache/
+
+# Ignore emacs projectile dotfile, backup files, and autosave files
+.projectile
+*~*
+*#*
+log/bengal.log
+log/*lein-db-migrate-output.txt
+log/*lein-db-validate-event-log-output.txt
+log/*lein-db-validate-activity-log-output.txt
+log/*lein-db-validate-site-trial-last-updated-output.txt
+# Ignore temporary migration files
+migrate-temp/
+.envrc
+.clj-kondo/.cache
