@@ -4,7 +4,9 @@
    [cheshire.generate :refer [add-encoder encode-str remove-encoder]]
    [clojure.tools.cli :refer [parse-opts]]
    [cognitect.transit :as transit])
-  (:import [java.io ByteArrayInputStream ByteArrayOutputStream])
+  (:import [java.io ByteArrayInputStream ByteArrayOutputStream]
+           (java.time LocalDate Instant)
+           (java.util.regex Pattern))
   (:gen-class))
 
 (def pretty-printer (ch/create-pretty-printer
@@ -13,15 +15,27 @@
 
 (add-encoder Object encode-str)
 
+(def write-transit-handlers
+  {Pattern (transit/write-handler "java.util.regex.Pattern"
+                                  #(.toString %))
+   LocalDate (transit/write-handler "java.time.LocalDate"
+                                    #(hash-map :day (.getDayOfMonth %) :month (.getMonthValue %) :year (.getYear %)))
+   Instant (transit/write-handler "java.time.Instant"
+                                  #(.getEpochSecond %))})
+
+(def read-transit-handlers
+  {"java.time.LocalDate" (transit/read-handler #(LocalDate/of (:year %) (:month %) (:day %)))
+   "java.time.Instant" (transit/read-handler #(Instant/ofEpochSecond %))})
+
 (defn clj->transit [data enc]
   (let [os (new ByteArrayOutputStream 4096)
-        writer (transit/writer os enc)]
+        writer (transit/writer os enc {:handlers write-transit-handlers})]
     (transit/write writer data)
     (.toString os)))
 
 (defn transit->clj [tdata enc]
   (let [is (new ByteArrayInputStream (.getBytes tdata))
-        reader (transit/reader is enc)]
+        reader (transit/reader is enc {:handlers read-transit-handlers})]
     (transit/read reader)))
 
 (defn transit->json [tjson enc]
@@ -37,7 +51,7 @@
     :parse-fn identity]
    ["-j" "--json JSON" "JSON to convert to transit"
     :parse-fn identity]
-   ["-e" "--encoding" "Transit encoding"
+   ["-e" "--encoding ENCODING" "Transit encoding"
     :default :json
     :parse-fn keyword]
    ["-h" "--help"]])
