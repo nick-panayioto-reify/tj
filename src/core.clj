@@ -3,6 +3,7 @@
    [cheshire.core :as ch]
    [cheshire.generate :refer [add-encoder encode-str remove-encoder]]
    [clojure.tools.cli :refer [parse-opts]]
+   [clojure.pprint :refer [pprint]]
    [cognitect.transit :as transit])
   (:import [java.io ByteArrayInputStream ByteArrayOutputStream]
            (java.time LocalDate Instant)
@@ -34,7 +35,9 @@
     (.toString os)))
 
 (defn transit->clj [tdata enc]
-  (let [is (new ByteArrayInputStream (.getBytes tdata))
+  (let [is (if tdata
+             (new ByteArrayInputStream (.getBytes tdata))
+             System/in)
         reader (transit/reader is enc {:handlers read-transit-handlers})]
     (transit/read reader)))
 
@@ -47,23 +50,40 @@
       (clj->transit enc)))
 
 (def cli-options
-  [["-t" "--transit TRANSIT" "Transit to convert to json"
-    :parse-fn identity]
-   ["-j" "--json JSON" "JSON to convert to transit"
-    :parse-fn identity]
+  [["-i" "--input-type TYPE" "Type of input data: json, transit, or edn"
+    :parse-fn keyword
+    :default :transit]
+   ["-o" "--output-type TYPE" "Type of output data: json, transit, or edn"
+    :parse-fn keyword
+    :default :json]
    ["-e" "--encoding ENCODING" "Transit encoding"
     :default :json
     :parse-fn keyword]
    ["-h" "--help"]])
 
 (defn -main [& args]
-  (let [{:keys [options arguments errors summary]} (parse-opts args cli-options)]
-    (cond
-      (:help options) (println summary)
-      (:transit options) (println (transit->json (:transit options) (:encoding options)))
-      (:json options) (println (json->transit (:json options) (:encoding options)))
-      :else (println summary))))
+  (let [{:keys [options arguments errors summary]} (parse-opts args cli-options)
+        {:keys [input-type output-type encoding help]} options
+        [data] arguments
+        out (cond
+              help summary
+              (and (= input-type :transit) (= output-type :json)) (transit->json data encoding)
+              (and (= input-type :transit) (= output-type :edn)) (transit->clj data encoding)
+              (and (= input-type :json) (= output-type :transit)) (json->transit data encoding)
+              (and (= input-type :json) (= output-type :edn)) (ch/parse-string data)
+              (and (= input-type :edn) (= output-type :json))
+              (ch/generate-string (read-string (or data (slurp *in*))) {:pretty pretty-printer})
+              (and (= input-type :edn) (= output-type :transit))
+              (clj->transit (read-string (or data (slurp *in*))) encoding)
+              :else (transit->json (:transit options) (:encoding options)))]
+    (if (= output-type :edn)
+      (pprint out)
+      (println out))))
 
-(comment 
-  (-main "-j" "{\"x\": 22}")
-  (-main "-t" "[\"^ \",\"x\",22]")) 
+(comment
+  (-main "-i" "json" "-o" "transit" "{\"x\": 22}")
+  (-main "-i" "json" "-o" "edn" "{\"x\": 22}")
+  (-main "[\"^ \",\"x\",22]")
+  (-main "-i" "transit" "-o" "edn" "[\"^ \",\"x\",23]")
+  (-main "-i" "edn" "-o" "json" "{:y 99}")
+  (-main "-i" "edn" "-o" "transit" "{:y 99}")) 
