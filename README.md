@@ -12,17 +12,34 @@ make uberjar
   -e, --encoding ENCODING  json     Transit encoding
   -h, --help
 ```
-### Convert From transit data to plain json
+
+## Execution
+```shell
+./bin/tj <args>
+```
+or directly
+```shell
+java -jar tj.jar <args>
+```
+
+### Convert from transit data to plain json
 ```shell
 tj -e <transit encoding> <transit encoded data>
 ```
 
-### Convert From json to transit
+### Convert from json to transit
 ```shell
 tj -i json -o transit -e <transit encoding> <json>
 ```
 
-### Convert From json to edn
+### Convert from json to edn
 ```shell
 tj -i json -o edn <json>
 ```
+
+## Emacs
+Make sure the [tj](./bin/tj) script is accessable from emacs' shell
+```lisp
+(add-to-list 'exec-path <bin dir>)
+```
+and evaluate [tj.el](./tj.el)
