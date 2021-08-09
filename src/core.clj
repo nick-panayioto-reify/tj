@@ -69,12 +69,14 @@
               help summary
               (and (= input-type :transit) (= output-type :json)) (transit->json data encoding)
               (and (= input-type :transit) (= output-type :edn)) (transit->clj data encoding)
-              (and (= input-type :json) (= output-type :transit)) (json->transit data encoding)
-              (and (= input-type :json) (= output-type :edn)) (ch/parse-string data)
+              (and (= input-type :json) (= output-type :transit)) (json->transit (or data (slurp *in*)) encoding)
+              (and (= input-type :json) (= output-type :edn)) (ch/parse-string (or data (slurp *in*)))
               (and (= input-type :edn) (= output-type :json))
               (ch/generate-string (read-string (or data (slurp *in*))) {:pretty pretty-printer})
               (and (= input-type :edn) (= output-type :transit))
               (clj->transit (read-string (or data (slurp *in*))) encoding)
+              (and (= input-type output-type))
+              (or data (slurp *in*))
               :else (transit->json (:transit options) (:encoding options)))]
     (if (= output-type :edn)
       (pprint out)

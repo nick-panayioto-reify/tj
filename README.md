@@ -2,7 +2,7 @@
 
 ## Build
 ```shell 
-make uberjar
+make
 ```
 
 ## Usage
